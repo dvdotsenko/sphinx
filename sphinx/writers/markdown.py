@@ -21,6 +21,7 @@ from docutils.utils import column_width
 
 from sphinx import addnodes
 from sphinx.locale import admonitionlabels, _
+from sphinx.writers.text import TextTranslator
 
 LAST = -1
 FIRST = 0
@@ -32,28 +33,7 @@ class NotSet:
     pass
 
 
-class MarkdownTranslator(nodes.NodeVisitor):
-
-    sectionchars = '*=-~"+`'
-
-    def __init__(self, document, builder):
-        nodes.NodeVisitor.__init__(self, document)
-        self.builder = builder
-
-        newlines = builder.config.text_newlines
-        if newlines == 'windows':
-            self.nl = '\r\n'
-        elif newlines == 'native':
-            self.nl = os.linesep
-        else:
-            self.nl = '\n'
-        self.sectionchars = builder.config.text_sectionchars
-        self.states = [[]]
-        self.stateindent = [0]
-        self.list_counter = []
-        self.sectionlevel = 1
-        self.lineblocklevel = 0
-        self.table = None
+class MarkdownTranslator(TextTranslator):
 
     def add_text(self, text):
         self.states[LAST].append((NO_INDENT, text))
@@ -243,12 +223,11 @@ class MarkdownTranslator(nodes.NodeVisitor):
         # parent node for method / class / function signature line
         # it's just a grouping element. See individual parts below for rendering of name, addname, args etc
         self.new_state(0)
-        self.add_text(self.nl + '#' + self._title_prefix)
         if node.parent['objtype'] in ('class', 'exception'):
             self.add_text('%s ' % node.parent['objtype'])
 
     def depart_desc_signature(self, node):
-        self.end_state(wrap=False, end=None)
+        self.end_state(wrap=False, end=None, first='#' + self._title_prefix)
 
     def visit_desc_name(self, node):
         # actual name of the function
@@ -286,6 +265,30 @@ class MarkdownTranslator(nodes.NodeVisitor):
     def depart_desc_content(self, node):
         self.end_state()
 
+    def visit_desc_type(self, node):
+        pass
+
+    def depart_desc_type(self, node):
+        pass
+
+    def visit_desc_returns(self, node):
+        self.add_text(' -> ')
+
+    def depart_desc_returns(self, node):
+        pass
+
+    def visit_desc_optional(self, node):
+        self.add_text('[')
+
+    def depart_desc_optional(self, node):
+        self.add_text(']')
+
+    def visit_desc_annotation(self, node):
+        pass
+
+    def depart_desc_annotation(self, node):
+        pass
+
     def visit_emphasis(self, node):
         self.add_text('_')
 
@@ -309,6 +312,84 @@ class MarkdownTranslator(nodes.NodeVisitor):
 
     def depart_literal_strong(self, node):
         self.add_text('**')
+
+    def visit_field_list(self, node):
+        # list of multiple fields/parameter sections
+        pass
+
+    def depart_field_list(self, node):
+        pass
+
+    def visit_field(self, node):
+        # single field / parameter section
+        # see field_name & field_body for actual handling
+        pass
+
+    def depart_field(self, node):
+        pass
+
+    def visit_field_name(self, node):
+        self.new_state(0)
+
+    def depart_field_name(self, node):
+        self.add_text(':')
+        self.end_state(end=None)
+
+    def visit_field_body(self, node):
+        self.new_state()
+
+    def depart_field_body(self, node):
+        self.end_state()
+
+    def visit_bullet_list(self, node):
+        self.list_counter.append(NO_INDENT)
+
+    def depart_bullet_list(self, node):
+        self.list_counter.pop()
+
+    def visit_enumerated_list(self, node):
+        self.list_counter.append(node.get('start', 1) - 1)
+
+    def depart_enumerated_list(self, node):
+        self.list_counter.pop()
+
+    def visit_definition_list(self, node):
+        self.list_counter.append(-2)
+
+    def depart_definition_list(self, node):
+        self.list_counter.pop()
+
+    def visit_list_item(self, node):
+        if self.list_counter[LAST] == -1:
+            # bullet list
+            self.new_state(4)
+        elif self.list_counter[LAST] == -2:
+            # definition list
+            pass
+        else:
+            # enumerated list
+            self.list_counter[LAST] += 1
+            self.new_state(len(str(self.list_counter[LAST])) + 4)
+
+    def depart_list_item(self, node):
+        if self.list_counter[LAST] == -1:
+            self.end_state(first='*   ')
+        elif self.list_counter[LAST] == -2:
+            pass
+        else:
+            self.end_state(first='%s.  ' % self.list_counter[LAST])
+
+    def visit_definition_list_item(self, node):
+        self._li_has_classifier = len(node) >= 2 and isinstance(node[1], nodes.classifier)
+
+    def depart_definition_list_item(self, node):
+        pass
+
+    def visit_index(self, node):
+        pass
+
+    def depart_index(self, node):
+        pass
 
     def unknown_visit(self, node):
         self.builder.info(u'== ({}) skipping: {} - "{}"'.format(
