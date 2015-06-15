@@ -69,6 +69,15 @@ class MarkdownTranslator(nodes.NodeVisitor):
         self.stateindent.append(indent)
 
     def end_state(self, wrap=True, end=NotSet, first=None, wrap_fn=None):
+        """
+
+        :param wrap:
+        :param end:
+        :type end: None or list or NotSet
+        :param first:
+        :param wrap_fn:
+        :return:
+        """
 
         if end is NotSet:
             end = ['']
@@ -131,8 +140,14 @@ class MarkdownTranslator(nodes.NodeVisitor):
     def depart_start_of_file(self, node):
         pass
 
+    @property
+    def _title_prefix(self):
+        if self.sectionlevel:
+            return (u'#' * self.sectionlevel) + ' '
+        else:
+            return ''
+
     def visit_section(self, node):
-        self._title_prefix = (u'#' * self.sectionlevel) + ' '
         self.sectionlevel += 1
 
     def depart_section(self, node):
@@ -202,10 +217,104 @@ class MarkdownTranslator(nodes.NodeVisitor):
             return content
         self.end_state(wrap_fn=_wrap_fn)
 
+    def visit_reference(self, node):
+        # these are single backticks, inline
+        # while in pure rst these are "reference to some other object"
+        # we are habitually using them in Markdown-like inline-code block
+        self.add_text('`')
+
+    def depart_reference(self, node):
+        self.add_text('`')
+
+    def visit_title_reference(self, node):
+        self.add_text('`')
+
+    def depart_title_reference(self, node):
+        self.add_text('`')
+
+    def visit_desc(self, node):
+        # top-level entry for function definitions block
+        pass
+
+    def depart_desc(self, node):
+        pass
+
+    def visit_desc_signature(self, node):
+        # parent node for method / class / function signature line
+        # it's just a grouping element. See individual parts below for rendering of name, addname, args etc
+        self.new_state(0)
+        self.add_text(self.nl + '#' + self._title_prefix)
+        if node.parent['objtype'] in ('class', 'exception'):
+            self.add_text('%s ' % node.parent['objtype'])
+
+    def depart_desc_signature(self, node):
+        self.end_state(wrap=False, end=None)
+
+    def visit_desc_name(self, node):
+        # actual name of the function
+        # we just wrap it in "bold"
+        self.add_text('**`')
+
+    def depart_desc_name(self, node):
+        self.add_text('`**')
+
+    def visit_desc_addname(self, node):
+        # module / lib prefix to the name of the function (if specified)
+        self.add_text('`')
+
+    def depart_desc_addname(self, node):
+        self.add_text('`')
+
+    def visit_desc_parameterlist(self, node):
+        # this is a parent for a list of function params
+        self.add_text('(')
+        args = node.astext()
+        if args:
+            self.add_text(
+                u'_`{}`_'.format(args)
+            )
+        raise nodes.SkipChildren
+
+    def depart_desc_parameterlist(self, node):
+        self.add_text(')')
+
+    def visit_desc_content(self, node):
+        # start of docstring / actual body of the function description goes here
+        self.new_state()
+        self.add_text('')
+
+    def depart_desc_content(self, node):
+        self.end_state()
+
+    def visit_emphasis(self, node):
+        self.add_text('_')
+
+    def depart_emphasis(self, node):
+        self.add_text('_')
+
+    def visit_literal_emphasis(self, node):
+        self.add_text('_')
+
+    def depart_literal_emphasis(self, node):
+        self.add_text('_')
+
+    def visit_strong(self, node):
+        self.add_text('**')
+
+    def depart_strong(self, node):
+        self.add_text('**')
+
+    def visit_literal_strong(self, node):
+        self.add_text('**')
+
+    def depart_literal_strong(self, node):
+        self.add_text('**')
+
     def unknown_visit(self, node):
-        self.builder.info(u'== ({}) skipping: {}'.format(
+        self.builder.info(u'== ({}) skipping: {} - "{}"'.format(
             self.sectionlevel,
-            node.__class__.__name__
+            node.__class__.__name__,
+            node.astext()
         ))
         raise nodes.SkipNode
         # raise NotImplementedError('Unknown node: ' + node.__class__.__name__)
