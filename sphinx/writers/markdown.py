@@ -23,6 +23,7 @@ from sphinx import addnodes
 from sphinx.locale import admonitionlabels, _
 
 LAST = -1
+FIRST = 0
 NO_INDENT = -1
 STDINDENT = 0
 
@@ -57,11 +58,17 @@ class MarkdownTranslator(nodes.NodeVisitor):
     def add_text(self, text):
         self.states[LAST].append((NO_INDENT, text))
 
+    def visit_Text(self, node):
+        self.add_text(node.astext())
+
+    def depart_Text(self, node):
+        pass
+
     def new_state(self, indent=STDINDENT):
         self.states.append([])
         self.stateindent.append(indent)
 
-    def end_state(self, wrap=True, end=NotSet, first=None):
+    def end_state(self, wrap=True, end=NotSet, first=None, wrap_fn=None):
 
         if end is NotSet:
             end = ['']
@@ -99,6 +106,9 @@ class MarkdownTranslator(nodes.NodeVisitor):
                 result.insert(0, (itemindent - indent, [new_item[0]]))
                 result[1] = (itemindent, new_item[1:])
                 result.extend(result_rest)
+
+        if wrap_fn:
+            result = wrap_fn(result)
 
         self.states[LAST].extend(result)
 
@@ -150,17 +160,47 @@ class MarkdownTranslator(nodes.NodeVisitor):
                 0,
                 [
                     '',
-                    '{} {}'.format(title_prefix, title),
+                    '{}{}'.format(title_prefix, title),
                     ''
                 ]
             )
         )
 
-    def visit_Text(self, node):
-        self.add_text(node.astext())
+    def visit_paragraph(self, node):
+        if not isinstance(node.parent, nodes.Admonition) or \
+                isinstance(node.parent, addnodes.seealso):
 
-    def depart_Text(self, node):
+            self.new_state(0)
+
+    def depart_paragraph(self, node):
+        if not isinstance(node.parent, nodes.Admonition) or \
+                isinstance(node.parent, addnodes.seealso):
+
+            self.end_state()
+
+    def visit_compound(self, node):
         pass
+
+    def depart_compound(self, node):
+        pass
+
+    def visit_literal_block(self, node):
+        # This is "code" section
+        self.new_state()
+
+    def depart_literal_block(self, node):
+        def _wrap_fn(content):
+            """
+            :param list content: [(0, [u'code line 1', u'code line 2', ''])]
+            :return: same with tripple-backticks wrapping around code lines array
+            """
+            if content:
+                content_group = content[FIRST]
+                lines = content_group[LAST]
+                lines.insert(FIRST, '```')
+                lines.insert(LAST, '```') # the very last line is empty spacer.
+            return content
+        self.end_state(wrap_fn=_wrap_fn)
 
     def unknown_visit(self, node):
         self.builder.info(u'== ({}) skipping: {}'.format(
