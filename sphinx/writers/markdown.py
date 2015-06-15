@@ -229,6 +229,13 @@ class MarkdownTranslator(TextTranslator):
     def depart_desc_signature(self, node):
         self.end_state(wrap=False, end=None, first='#' + self._title_prefix)
 
+    def visit_desc_addname(self, node):
+        # module / lib prefix to the name of the function (if specified)
+        self.add_text('`')
+
+    def depart_desc_addname(self, node):
+        self.add_text('`')
+
     def visit_desc_name(self, node):
         # actual name of the function
         # we just wrap it in "bold"
@@ -236,13 +243,6 @@ class MarkdownTranslator(TextTranslator):
 
     def depart_desc_name(self, node):
         self.add_text('`**')
-
-    def visit_desc_addname(self, node):
-        # module / lib prefix to the name of the function (if specified)
-        self.add_text('`')
-
-    def depart_desc_addname(self, node):
-        self.add_text('`')
 
     def visit_desc_parameterlist(self, node):
         # this is a parent for a list of function params
@@ -330,9 +330,10 @@ class MarkdownTranslator(TextTranslator):
 
     def visit_field_name(self, node):
         self.new_state(0)
+        self.add_text('**')
 
     def depart_field_name(self, node):
-        self.add_text(':')
+        self.add_text('**:')
         self.end_state(end=None)
 
     def visit_field_body(self, node):
