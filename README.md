@@ -158,158 +158,165 @@ Return value is a key value collection representing the new User
 
 ## API
 
-*   ### `tests.`**`add_numbers`**(_`*args`_)
+### `tests.`**`add_numbers`**(_`*args`_)
 
-    Adds together as many numbers are are passed to the method call
+Adds together as many numbers are are passed to the method call
 
-    Example:
+Example:
 
-    ```
-    add_numbers(1,23,4)
-    ```
+```
+add_numbers(1,23,4)
+```
 
-    Parameters:
-    **args** (_list_) -- a list of None or more numbers to add
+**Parameters**:
+**args** (_list_) -- a list of None or more numbers to add
 
-    Returns:
-    the resulting sum
+**Returns**:
+the resulting sum
 
-*   ### `users.`**`login`**(_`**data`_)
+### `users.`**`login`**(_`**data`_)
 
-    Exchanges existing user login data for valid credentials.
+Exchanges existing user login data for valid credentials.
 
-    Expects named arguments. Python call example:
+Expects named arguments. Python call example:
 
-    ```
-    .login(
-        contact_point_value="test@example.com",
-        password="pass"
-    )
-    ```
+```
+.login(
+    contact_point_value="test@example.com",
+    password="pass"
+)
+```
 
-    Response example:
+Response example:
 
-    ```
-    {
-        "Authorization": "Bearer eyJh...hw2rw"
-    }
-    ```
+```
+{
+    "Authorization": "Bearer eyJh...hw2rw"
+}
+```
 
-    Parameters:
-    -   **contact_point_value** -- literal value of one of Contact Points User allowed to act as login name
+**Parameters**:
+*   **contact_point_value** -- literal value of one of Contact Points User allowed to act as login name
 
-    -   **password** -- literal plain-text password for the account linked to that contact point.
+*   **password** -- literal plain-text password for the account linked to that contact point.
 
-    Returns:
-    A hash object containing key-value pairs of headers client must
-    send back to authenticate subsequent requests
+**Returns**:
+A hash object containing key-value pairs of headers client must
+send back to authenticate subsequent requests
 
-*   ### `users.`**`me`**()
+### `users.`**`me`**()
 
-    _(requires user session / authentication)_
+_(requires user session / authentication)_
 
-    Returns user record data for the logged in user:
+Returns user record data for the logged in user:
 
-    ```
-    {
-      "gender": null,
-      "id": "b3856cc0-baa2-4895-b4a5-94a7e1bda1eb",
-      "date_of_birth": "2000-01-01T00:00:00",
-      "name": "name",
-      "contact_points_keys": [
-        [
-          "ContactPoint",
-          "TEST@EXAMPLE.COM"
-        ],
-        [
-          "ContactPoint",
-          "13105551212"
-        ],
-        [
-          "ContactPoint",
-          "B3856CC0-BAA2-4895-B4A5-94A7E1BDA1EB"
-        ]
-      ]
-    }
-    ```
+```
+{
+  "gender": null,
+  "id": "b3856cc0-baa2-4895-b4a5-94a7e1bda1eb",
+  "date_of_birth": "2000-01-01T00:00:00",
+  "name": "name",
+  "contact_points_keys": [
+    [
+      "ContactPoint",
+      "TEST@EXAMPLE.COM"
+    ],
+    [
+      "ContactPoint",
+      "13105551212"
+    ],
+    [
+      "ContactPoint",
+      "B3856CC0-BAA2-4895-B4A5-94A7E1BDA1EB"
+    ]
+  ]
+}
+```
 
-    Returns:
-    Serialized user record data
+**Returns**:
+Serialized user record data
 
-*   ### `users.`**`recover_password`**(_`contact_point_value, contact_point_type=None`_)
+### `users.`**`recover_password`**(_`contact_point_value, contact_point_type=None`_)
 
-    Sends password recovery email to user.
+Sends password recovery email to user.
 
-    Parameters:
-    -   **contact_point_value** (_str_) -- Value of the contact point user is choosing to send the password recovery request to.
+**Parameters**:
+*   **contact_point_value** (_str_) -- Value of the contact point user is choosing to send the password recovery request to.
 
-    -   **contact_point_type** (_int_) --
+*   **contact_point_type** (_int_) --
 
-        (Optional) Type of contact point. One of:
-
-        ```
-        user_direct = 1
-        email_address = 2
-        phone_number = 3
-        ```
-
-*   ### `users.`**`register`**(_`**data`_)
-
-    Exchanges new user data for valid login credentials.
-
-    Expects named arguments:
+    (Optional) Type of contact point. One of:
 
     ```
-    {
-        "user_id": "fullname123",
-        "name": "Full Name",
-        "password": "pass",
-        "date_of_birth": "2000-01-01",
-        "gender": "1",
-        "contact_points": [
-          {
-            "value": "test@example.com",
-            "type": 2
-          },
-          {
-            "value": "+1 (310) 555-1212",
-            "type": 3
-          }
-        ]
-    }
+    user_direct = 1
+    email_address = 2
+    phone_number = 3
     ```
 
-    Response example:
+### `users.`**`register`**(_`**data`_)
+
+Exchanges new user data for valid login credentials.
+
+Expects named arguments:
+
+```
+{
+    "user_id": "fullname123",
+    "name": "Full Name",
+    "password": "pass",
+    "date_of_birth": "2000-01-01",
+    "gender": "1",
+    "contact_points": [
+      {
+        "value": "test@example.com",
+        "type": 2
+      },
+      {
+        "value": "+1 (310) 555-1212",
+        "type": 3
+      }
+    ]
+}
+```
+
+Response example:
+
+```
+{
+    "Authorization": "Bearer eyJh...hw2rw"
+}
+```
+
+**Parameters**:
+*   **user_id** (_str_) -- (Optional) Acts as username for the account. Autogenerated if not provided.
+
+*   **name** (_str_) -- Full name of the user
+
+*   **date_of_birth** (_str_) -- (Optional) ISO String containing date of birth of the user.
+
+*   **gender** (_int_) -- (Optional) An enum indicating gender of the user (1 = male, 2 = female)
+
+*   **password** (_str_) -- literal plain-text password for the account linked to that contact point.
+
+*   **contact_points** (_list_) --
+
+    A list of one or more objects representing contact points user chose to add to the account.
+    Type attribute values are per ContactPointType enum:
 
     ```
-    {
-        "Authorization": "Bearer eyJh...hw2rw"
-    }
+    email_address = 2
+    phone_number = 3
     ```
 
-    Parameters:
-    -   **user_id** (_str_) -- (Optional) Acts as username for the account. Autogenerated if not provided.
-
-    -   **name** (_str_) -- Full name of the user
-
-    -   **date_of_birth** (_str_) -- (Optional) ISO String containing date of birth of the user.
-
-    -   **gender** (_int_) -- (Optional) An enum indicating gender of the user (1 = male, 2 = female)
-
-    -   **password** (_str_) -- literal plain-text password for the account linked to that contact point.
-
-    -   **contact_points** (_list_) --
-
-        A list of one or more objects representing contact points user chose to add to the account.
-        Type attribute values are per ContactPointType enum:
-
-        ```
-        email_address = 2
-        phone_number = 3
-        ```
-
-    Returns:
-    A hash object containing key-value pairs of headers client must
-    send back to authenticate subsequent requests
+**Returns**:
+A hash object containing key-value pairs of headers client must
+send back to authenticate subsequent requests
 
 
+# Indices and tables
+
+*   `Index`
+
+*   `Module Index`
+
+*   `Search Page`
